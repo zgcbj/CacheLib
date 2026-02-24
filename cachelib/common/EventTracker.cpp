@@ -22,7 +22,8 @@ namespace cachelib {
 EventTracker::EventTracker(Config&& config)
     : eventInfoQueue_(config.queueSize),
       eventSink_(std::move(config.eventSink)),
-      eventInfoCallback_(std::move(config.eventInfoCallback)),
+      preQueueCallback_(std::move(config.preQueueCallback)),
+      postQueueCallback_(std::move(config.postQueueCallback)),
       sampler_(config.sampler ? std::move(config.sampler)
                               : std::make_unique<FurcHashSampler>(0)) {
   validateConfig();
@@ -58,6 +59,9 @@ void EventTracker::runBackgroundThread() {
       EventInfo eventInfo;
       eventInfoQueue_.blockingRead(eventInfo);
       if (!eventInfo.key.empty()) {
+        if (postQueueCallback_) {
+          postQueueCallback_(eventInfo);
+        }
         eventSink_->recordEvent(eventInfo);
       } else {
         // received sentinel event
@@ -74,7 +78,7 @@ void EventTracker::runBackgroundThread() {
   }
 }
 
-RecordResult EventTracker::record(const EventInfo& eventInfo) {
+RecordResult EventTracker::record(EventInfo& eventInfo) {
   recordCount_.inc();
   if (!sampleKey(eventInfo.key)) {
     return RecordResult::NOT_SAMPLED;
@@ -82,8 +86,11 @@ RecordResult EventTracker::record(const EventInfo& eventInfo) {
   return recordWithoutSampling(eventInfo);
 }
 
-RecordResult EventTracker::recordWithoutSampling(const EventInfo& eventInfo) {
+RecordResult EventTracker::recordWithoutSampling(EventInfo& eventInfo) {
   addToQueueCount_.inc();
+  if (preQueueCallback_) {
+    preQueueCallback_(eventInfo);
+  }
   bool addedToQueue = eventInfoQueue_.write(eventInfo);
   if (!addedToQueue) {
     dropCount_.inc();
