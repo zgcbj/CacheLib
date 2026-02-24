@@ -162,6 +162,8 @@ class TestCacheComponent : public CacheComponent {
     co_return folly::unit;
   }
 
+  CacheComponentStats getStats() const noexcept override { return {}; }
+
   /**
    * Helper to find an item in the allocated list.
    * @param item the item to find

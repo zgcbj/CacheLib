@@ -35,7 +35,7 @@ class ConsistentFlashCacheItem;
  *
  * All APIs are cancellable.
  */
-class FlashCacheComponent : public CacheComponent {
+class FlashCacheComponent : public CacheComponentWithStats {
  public:
   /**
    * Factory method to create a new FlashCacheComponent, i.e., wrapper around

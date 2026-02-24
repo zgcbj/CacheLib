@@ -21,6 +21,7 @@
 #include "cachelib/interface/CacheItem.h"
 #include "cachelib/interface/Handle.h"
 #include "cachelib/interface/Result.h"
+#include "cachelib/interface/Stats.h"
 
 namespace facebook::cachelib::interface {
 
@@ -118,6 +119,8 @@ class CacheComponent {
    */
   virtual folly::coro::Task<UnitResult> remove(ReadHandle&& handle) = 0;
 
+  virtual CacheComponentStats getStats() const noexcept = 0;
+
  protected:
   /**
    * Mark an item as inserted into cache.
@@ -163,6 +166,23 @@ class CacheComponent {
 
   friend class Handle;
   friend class WriteHandle;
+};
+
+/**
+ * A cache component that provides stats. Your implementation still needs to
+ * bump them!
+ */
+class CacheComponentWithStats : public CacheComponent {
+ public:
+  CacheComponentWithStats()
+      : stats_(std::make_unique<CacheComponentStatsCollector>()) {}
+
+  CacheComponentStats getStats() const noexcept override {
+    return CacheComponentStats(*stats_);
+  }
+
+ protected:
+  std::unique_ptr<CacheComponentStatsCollector> stats_;
 };
 
 } // namespace facebook::cachelib::interface

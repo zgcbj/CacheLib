@@ -41,7 +41,7 @@ namespace interface {
  * Although all APIs use coroutines (according to the CacheComponent interface),
  * they are synchronous under the hood.
  */
-class RAMCacheComponent : public CacheComponent {
+class RAMCacheComponent : public CacheComponentWithStats {
  public:
   /**
    * Pool configuration. RAMCacheComponent includes only 1 pool - to add more
