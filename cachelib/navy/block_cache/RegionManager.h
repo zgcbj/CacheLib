@@ -20,7 +20,6 @@
 #include <folly/container/F14Map.h>
 #include <folly/fibers/TimedMutex.h>
 
-#include <cassert>
 #include <memory>
 #include <utility>
 
@@ -33,8 +32,6 @@
 #include "cachelib/navy/common/Device.h"
 #include "cachelib/navy/common/NavyThread.h"
 #include "cachelib/navy/common/Types.h"
-#include "cachelib/navy/serialization/RecordIO.h"
-#include "cachelib/navy/serialization/Serialization.h"
 
 namespace facebook {
 namespace cachelib {

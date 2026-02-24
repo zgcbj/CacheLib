@@ -20,7 +20,6 @@
 #include <vector>
 
 #include "cachelib/common/inject_pause.h"
-#include "cachelib/navy/block_cache/Allocator.h"
 #include "cachelib/navy/block_cache/LruPolicy.h"
 #include "cachelib/navy/block_cache/RegionManager.h"
 #include "cachelib/navy/block_cache/tests/TestHelpers.h"

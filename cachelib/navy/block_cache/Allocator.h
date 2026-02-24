@@ -18,15 +18,10 @@
 
 #include <folly/fibers/TimedMutex.h>
 
-#include <atomic>
-#include <functional>
-#include <memory>
-#include <stdexcept>
 #include <vector>
 
 #include "cachelib/common/AtomicCounter.h"
 #include "cachelib/navy/block_cache/RegionManager.h"
-#include "cachelib/navy/common/Buffer.h"
 #include "cachelib/navy/common/Types.h"
 
 namespace facebook {
