@@ -1,7 +1,6 @@
 name: Docker Hub CI
 
 on:
-  on:
   pull_request:
   workflow_dispatch:
 
