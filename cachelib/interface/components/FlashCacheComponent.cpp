@@ -83,10 +83,16 @@ class FlashCacheItem : public CacheItem {
   // ------------------------------ Interface ------------------------------ //
 
   uint32_t getCreationTime() const noexcept override {
-    return reinterpret_cast<const uint32_t*>(buffer_.data())[0];
+    return getCreationTime(buffer_.view());
+  }
+  static uint32_t getCreationTime(navy::BufferView buffer) noexcept {
+    return reinterpret_cast<const uint32_t*>(buffer.data())[0];
   }
   uint32_t getExpiryTime() const noexcept override {
-    return reinterpret_cast<const uint32_t*>(buffer_.data())[1];
+    return getExpiryTime(buffer_.view());
+  }
+  static uint32_t getExpiryTime(navy::BufferView buffer) noexcept {
+    return reinterpret_cast<const uint32_t*>(buffer.data())[1];
   }
   // Ref-counting for FlashCache is different than RAMCache - multiple
   // RAMCacheItems all refer to a single cache item in memory whereas each
@@ -122,6 +128,28 @@ class FlashCacheItem : public CacheItem {
   Buffer buffer_;
 };
 
+namespace {
+UnitResult initConfig(navy::BlockCache::Config& config, navy::Device* device) {
+  constexpr auto expireCheck = [](navy::BufferView v) -> bool {
+    return util::isExpired(FlashCacheItem::getExpiryTime(v));
+  };
+
+  if (config.checkExpired) {
+    return makeError(Error::Code::INVALID_CONFIG,
+                     "expiration callback set in BlockCache::Config but "
+                     "FlashCacheComponent is going to set it");
+  } else if (config.device && config.device != device) {
+    return makeError(Error::Code::INVALID_CONFIG,
+                     "device set in BlockCache::Config is not the same as "
+                     "the device passed to FlashCacheComponent::create()");
+  }
+
+  config.device = device;
+  config.checkExpired = expireCheck;
+  return folly::unit;
+}
+} // namespace
+
 // ============================================================================
 // FlashCacheComponent
 // ============================================================================
@@ -131,6 +159,9 @@ class FlashCacheItem : public CacheItem {
     navy::BlockCache::Config&& config,
     std::unique_ptr<navy::Device> device) noexcept {
   try {
+    if (auto result = initConfig(config, device.get()); result.hasError()) {
+      return folly::makeUnexpected(std::move(result).error());
+    }
     return FlashCacheComponent(std::move(name), std::move(config),
                                std::move(device));
   } catch (const std::invalid_argument& ia) {
@@ -354,10 +385,9 @@ folly::coro::Task<UnitResult> FlashCacheComponent::remove(ReadHandle&& handle) {
 FlashCacheComponent::FlashCacheComponent(std::string&& name,
                                          navy::BlockCache::Config&& config,
                                          std::unique_ptr<Device> device)
-    : name_(std::move(name)), device_(std::move(device)) {
-  config.device = device_.get();
-  cache_ = std::make_unique<navy::BlockCache>(std::move(config));
-}
+    : name_(std::move(name)),
+      device_(std::move(device)),
+      cache_(std::make_unique<navy::BlockCache>(std::move(config))) {}
 
 bool FlashCacheComponent::writeBackImpl(CacheItem& item, bool allowReplace) {
   auto& fccItem = static_cast<FlashCacheItem&>(item);
@@ -435,6 +465,9 @@ ConsistentFlashCacheComponent::create(std::string name,
                                       std::unique_ptr<Hash> hasher,
                                       uint8_t shardsPower) noexcept {
   try {
+    if (auto result = initConfig(config, device.get()); result.hasError()) {
+      return folly::makeUnexpected(std::move(result).error());
+    }
     return ConsistentFlashCacheComponent(std::move(name), std::move(config),
                                          std::move(device), std::move(hasher),
                                          shardsPower);

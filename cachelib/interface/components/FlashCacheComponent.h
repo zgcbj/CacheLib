@@ -41,6 +41,9 @@ class FlashCacheComponent : public CacheComponent {
    * Factory method to create a new FlashCacheComponent, i.e., wrapper around
    * BlockCache.  Validates the config before actually creating the cache.
    *
+   * Note: don't set config.device or config.checkExpired - create() will set
+   * them internally
+   *
    * @param name name of the flash cache
    * @param config the BlockCache::Config to use for the cache
    * @param device the device to use for the cache
@@ -146,6 +149,9 @@ class ConsistentFlashCacheComponent : public FlashCacheComponent {
   /**
    * Factory method to create a new ConsistentFlashCacheComponent.  Validates
    * the config before actually creating the cache.
+   *
+   * Note: don't set config.device or config.checkExpired - create() will set
+   * them internally
    *
    * @param name name of the flash cache
    * @param config the BlockCache::Config to use for the cache
