@@ -34,12 +34,8 @@ CacheComponentStressor::CacheComponentStressor(
     const CacheConfig& cacheConfig,
     StressorConfig config,
     std::unique_ptr<GeneratorBase>&& generator)
-    : CacheStressorBase(std::move(config), std::move(generator)) {
-  validate(cacheConfig);
-  XCHECK(cacheConfig.allocator == "RAM")
-      << "Unexpected allocator " << cacheConfig.allocator;
-  cache_ = createRAMCacheComponent(cacheConfig);
-}
+    : CacheStressorBase(std::move(config), std::move(generator)),
+      cache_(createCacheComponent(validate(cacheConfig))) {}
 
 void CacheComponentStressor::start() {
   setStartTime();
@@ -66,9 +62,17 @@ void CacheComponentStressor::start() {
 
 // TODO use CacheStressor::getCacheStats()
 Stats CacheComponentStressor::getCacheStats() const {
-  auto& cache = reinterpret_cast<RAMCacheComponent*>(cache_.get())->get();
   Stats ret;
 
+  // Try to cast to RAMCacheComponent to get detailed stats FlashCacheComponent
+  // doesn't have the same stats interface; follow-on diffs will add stats
+  // support for it
+  auto* ramCache = dynamic_cast<RAMCacheComponent*>(cache_.get());
+  if (ramCache == nullptr) {
+    return ret;
+  }
+
+  auto& cache = ramCache->get();
   const auto cacheStats = cache.getGlobalCacheStats();
   auto poolId = *cache.getPoolIds().begin();
   PoolStats aggregate = cache.getPoolStats(poolId);
@@ -141,7 +145,8 @@ Stats CacheComponentStressor::getCacheStats() const {
   return ret;
 }
 
-void CacheComponentStressor::validate(const CacheConfig& cacheConfig) const {
+const CacheConfig& CacheComponentStressor::validate(
+    const CacheConfig& cacheConfig) const {
   if (config_.usesChainedItems()) {
     throw std::invalid_argument(
         "CacheComponentStressor does not support chained items");
@@ -150,7 +155,7 @@ void CacheComponentStressor::validate(const CacheConfig& cacheConfig) const {
         "CacheComponentStressor does not support trace timestamps");
   } else if (cacheConfig.nvmCacheSizeMB > 0) {
     throw std::invalid_argument(
-        "CacheComponentStressor does not support NVM caching");
+        "Use cacheSizeMB to set cache size, even for flash caching");
   } else if (config_.opRatePerSec > 0 || config_.opDelayBatch > 0 ||
              config_.opDelayNs > 0) {
     throw std::invalid_argument(
@@ -162,6 +167,7 @@ void CacheComponentStressor::validate(const CacheConfig& cacheConfig) const {
     throw std::invalid_argument(
         "CacheComponentStressor does not support item destructor checking");
   }
+  return cacheConfig;
 }
 
 folly::coro::Task<void> CacheComponentStressor::stressCoroutine(

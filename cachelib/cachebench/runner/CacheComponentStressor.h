@@ -53,7 +53,7 @@ class CacheComponentStressor : public CacheStressorBase {
  private:
   // Validate the test config (implicitly validates the StressorConfig in
   // CacheStressorBase::config_)
-  void validate(const CacheConfig& config) const;
+  const CacheConfig& validate(const CacheConfig& config) const;
 
   // Main stress coroutine that runs operations
   folly::coro::Task<void> stressCoroutine(ThroughputStats& stats);

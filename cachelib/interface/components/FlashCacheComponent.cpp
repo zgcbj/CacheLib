@@ -292,7 +292,7 @@ folly::coro::Task<Result<std::optional<ReadHandle>>> FlashCacheComponent::find(
 
   switch (ld.status_) {
   case Status::Ok: {
-    auto expiryTime = reinterpret_cast<const uint32_t*>(ld.buffer_.data())[1];
+    auto expiryTime = FlashCacheItem::getExpiryTime(ld.buffer_.view());
     if (util::isExpired(expiryTime)) {
       co_return std::nullopt;
     }

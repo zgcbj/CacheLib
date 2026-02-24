@@ -14,17 +14,26 @@
  * limitations under the License.
  */
 
-#pragma once
+#include "cachelib/cachebench/cache/components/Components.h"
 
-#include "cachelib/cachebench/util/CacheConfig.h"
-#include "cachelib/interface/CacheComponent.h"
+using namespace facebook::cachelib::interface;
 
 namespace facebook::cachelib::cachebench {
 
-constexpr uint64_t KB = 1024ULL;
-constexpr uint64_t MB = KB * 1024ULL;
-
-std::unique_ptr<interface::CacheComponent> createCacheComponent(
+extern std::unique_ptr<CacheComponent> createRAMCacheComponent(
     const CacheConfig& config);
+extern std::unique_ptr<CacheComponent> createFlashCacheComponent(
+    const CacheConfig& config);
+
+std::unique_ptr<CacheComponent> createCacheComponent(
+    const CacheConfig& config) {
+  if (config.allocator == "flash" || config.allocator == "consistent_flash") {
+    return createFlashCacheComponent(config);
+  } else {
+    XCHECK(config.allocator == "RAM")
+        << "Unexpected allocator " << config.allocator;
+    return createRAMCacheComponent(config);
+  }
+}
 
 } // namespace facebook::cachelib::cachebench

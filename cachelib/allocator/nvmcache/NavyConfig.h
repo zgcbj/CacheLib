@@ -663,7 +663,7 @@ class BlockCacheConfig {
 
   // Number of allocators per priority.
   // Do not set this directly. This should be configured by setAllocatorCount
-  // for FIFO and LRU, and enableSegmentedFifio for segmented FIFO.
+  // for FIFO and LRU, and enableSegmentedFifo for segmented FIFO.
   std::vector<uint32_t> allocatorsPerPriority_{1};
 
   // Index related config. If not specified, SparseMapIndex will be used
