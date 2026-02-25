@@ -118,7 +118,7 @@ class BlockCache final : public Engine {
   explicit BlockCache(Config&& config);
   BlockCache(const BlockCache&) = delete;
   BlockCache& operator=(const BlockCache&) = delete;
-  ~BlockCache() override = default;
+  ~BlockCache() override;
 
   // return the size of usable space
   uint64_t getSize() const override { return regionManager_.getSize(); }

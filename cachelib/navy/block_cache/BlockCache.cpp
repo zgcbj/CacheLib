@@ -140,6 +140,8 @@ std::unique_ptr<Index> BlockCache::createIndex(
   }
 }
 
+BlockCache::~BlockCache() { regionManager_.drain(); }
+
 BlockCache::BlockCache(Config&& config)
     : BlockCache{std::move(config.validate()), ValidConfigTag{}} {}
 
