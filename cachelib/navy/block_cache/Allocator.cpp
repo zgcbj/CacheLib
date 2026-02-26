@@ -18,7 +18,6 @@
 
 #include <folly/logging/xlog.h>
 
-#include <cassert>
 #include <utility>
 
 #include "cachelib/navy/common/NavyThread.h"

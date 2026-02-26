@@ -89,7 +89,16 @@ class EventTracker {
   struct Config {
     uint32_t queueSize = 0;
     std::unique_ptr<EventSink> eventSink = nullptr;
-    std::function<void(EventInfo&)> eventInfoCallback = nullptr;
+
+    // Callback invoked before queuing the event (in the caller's thread).
+    // Use this for processing non-owning data (e.g., payload StringPiece)
+    // that may not be valid by the time the background thread processes it.
+    std::function<void(EventInfo&)> preQueueCallback = nullptr;
+
+    // Callback invoked after dequeuing the event (in the background thread).
+    // Use this for processing owned data (e.g., parsing the key string)
+    // to avoid adding latency to the hot path.
+    std::function<void(EventInfo&)> postQueueCallback = nullptr;
 
     // Optional custom sampler.
     // If provided, this sampler will be used to determine whether a key
@@ -103,7 +112,7 @@ class EventTracker {
 
   // This calls sampleKey and if sampled, adds the event
   // to the queue.
-  RecordResult record(const EventInfo& eventInfo);
+  RecordResult record(EventInfo& eventInfo);
 
   // Sample key and track stats such as sample attempts
   // and sucess. This function is also called from
@@ -114,7 +123,7 @@ class EventTracker {
   // For users who want to first call sampleKey and then call
   // recordWithoutSampling() if sampleKey returns true to avoid
   // allocating EventInfo object when it is not going to be sampled.
-  RecordResult recordWithoutSampling(const EventInfo& eventInfo);
+  RecordResult recordWithoutSampling(EventInfo& eventInfo);
 
   void getStats(folly::F14FastMap<std::string, uint64_t>& statsMap) const;
 
@@ -126,7 +135,8 @@ class EventTracker {
   folly::MPMCQueue<EventInfo> eventInfoQueue_;
 
   std::unique_ptr<EventSink> eventSink_;
-  std::function<void(EventInfo&)> eventInfoCallback_;
+  std::function<void(EventInfo&)> preQueueCallback_;
+  std::function<void(EventInfo&)> postQueueCallback_;
   std::unique_ptr<SamplerInterface> sampler_;
 
   AtomicCounter recordCount_{0};

@@ -17,14 +17,11 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <algorithm>
 #include <memory>
-#include <random>
 
 #include "cachelib/common/inject_pause.h"
 #include "cachelib/navy/block_cache/Allocator.h"
 #include "cachelib/navy/block_cache/tests/TestHelpers.h"
-#include "cachelib/navy/testing/MockDevice.h"
 
 namespace facebook::cachelib::navy::tests {
 namespace {
