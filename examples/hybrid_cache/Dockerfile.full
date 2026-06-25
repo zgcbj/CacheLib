@@ -1,0 +1,45 @@
+FROM ubuntu:22.04
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    cmake \
+    build-essential \
+    libboost-all-dev \
+    libgoogle-glog-dev \
+    libgflags-dev \
+    libdouble-conversion-dev \
+    liblz4-dev \
+    libsnappy-dev \
+    libsodium-dev \
+    libzstd-dev \
+    libaio-dev \
+    libjemalloc-dev \
+    libunwind-dev \
+    libelf-dev \
+    libdwarf-dev \
+    python3 \
+    ninja-build \
+    curl \
+    wget
+
+# Install liburing
+RUN apt-get install -y liburing-dev
+
+# Clone and build CacheLib
+WORKDIR /opt
+RUN git clone https://github.com/facebook/CacheLib.git
+WORKDIR /opt/CacheLib
+
+# Build CacheLib
+RUN ./contrib/build.sh -j $(nproc) -d
+
+# Verify build
+RUN ls -la /opt/CacheLib/build-cachelib/
+RUN find /opt/CacheLib/build-cachelib/ -name "*.so" | head -10
+
+# Set environment
+ENV CACHELIB_HOME=/opt/CacheLib/opt/cachelib
+ENV LD_LIBRARY_PATH=${CACHELIB_HOME}/lib:$LD_LIBRARY_PATH
+
+CMD ["bash", "-c", "echo 'CacheLib built successfully!'; ls -la /opt/CacheLib/build-cachelib/"]
